@@ -22,6 +22,7 @@ export default async function generateProof() {
             guess_hash: inputsArray[0],
             // Public Inputs
             answer_hash: inputsArray[1],
+            address: inputsArray[2],
         }
         // Execute the circuit with the inputs to create the witness
         const { witness } = await noir.execute(inputs);

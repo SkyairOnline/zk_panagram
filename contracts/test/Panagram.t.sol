@@ -25,14 +25,15 @@ contract PanagramTest is Test {
         panagram.newRound(ANSWER);
     }
 
-    function _getProof(bytes32 guess, bytes32 correctAnswer) internal returns (bytes memory _proof) {
-        uint256 NUM_ARGS = 5;
+    function _getProof(bytes32 guess, bytes32 correctAnswer, address sender) internal returns (bytes memory _proof) {
+        uint256 NUM_ARGS = 6;
         string[] memory inputs = new string[](NUM_ARGS);
         inputs[0] = "npx";
         inputs[1] = "tsx";
         inputs[2] = "js-scripts/generateProof.ts";
         inputs[3] = vm.toString(guess);
         inputs[4] = vm.toString(correctAnswer);
+        inputs[5] = vm.toString(sender);
 
         bytes memory encodedProof = vm.ffi(inputs);
         _proof = abi.decode(encodedProof, (bytes));
@@ -42,7 +43,7 @@ contract PanagramTest is Test {
     // 1. Test someone receive NFT 0 if they guess correctly first
     function testCorrectGuessPasses() public {
         vm.prank(user);
-        bytes memory proof = _getProof(ANSWER, ANSWER);
+        bytes memory proof = _getProof(ANSWER, ANSWER, user);
         panagram.makeGuess(proof);
         vm.assertEq(panagram.balanceOf(user, 0), 1);
         vm.assertEq(panagram.balanceOf(user, 1), 0);
@@ -53,6 +54,46 @@ contract PanagramTest is Test {
     }
 
     // 2. Test someone receive NFT 1 if they guess correctly but not first
+    function testSecondGuessPasses() public {
+        vm.prank(user);
+        bytes memory proof = _getProof(ANSWER, ANSWER, user);
+        panagram.makeGuess(proof);
+        vm.assertEq(panagram.balanceOf(user, 0), 1);
+        vm.assertEq(panagram.balanceOf(user, 1), 0);
+
+        address user2 = makeAddr("user2");
+        bytes memory proof2 = _getProof(ANSWER, ANSWER, user2);
+        vm.prank(user2);
+        panagram.makeGuess(proof2);
+        vm.assertEq(panagram.balanceOf(user2, 0), 0);
+        vm.assertEq(panagram.balanceOf(user2, 1), 1);
+    }
 
     // 3. Test we can start a new round
+    function testStartSecondRound() public {
+        vm.prank(user);
+        bytes memory proof = _getProof(ANSWER, ANSWER, user);
+        panagram.makeGuess(proof);
+        vm.assertEq(panagram.balanceOf(user, 0), 1);
+        vm.assertEq(panagram.balanceOf(user, 1), 0);
+
+        vm.warp(panagram.MIN_DURATION() + 1);
+        bytes32 NEW_ANSWER = bytes32(uint256(keccak256("outnumber")) % FIELD_MODULUS);
+        panagram.newRound(NEW_ANSWER);
+
+        vm.assertEq(panagram.s_currentRound(), 2);
+        vm.assertEq(panagram.s_currentRoundWinner(), address(0));
+        vm.assertEq(panagram.s_answer(), NEW_ANSWER);
+    }
+
+    function testIncorrectGuessFails() public {
+        bytes memory incorrectProof = _getProof(
+            bytes32(uint256(keccak256("outnumber")) % FIELD_MODULUS),
+            bytes32(uint256(keccak256("outnumber")) % FIELD_MODULUS),
+            user
+        );
+        vm.prank(user);
+        vm.expectRevert();
+        panagram.makeGuess(incorrectProof); // Should revert since guess is incorrect
+    }
 }
