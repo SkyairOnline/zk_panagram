@@ -1,66 +1,11 @@
-## Foundry
+# ZK panagram
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+- Each "answer" is a "round"
+- The owner is the only person that can start a new round
+- The round needs to have a minimum duration
+- There needs to be a "winner" to start the next round
+- The contract needs to be an NFT contracts
+    - ERC-1155 (token id 0 for winners, token id 1 for runners up)
+    - Mint ID 0 if the user is the first person to guess correctly in the round
+    - Mint ID 1 if they got it correct but they are not the first in that round
+- To check if the user's guess is correct, we will call the Verifier smart contract
