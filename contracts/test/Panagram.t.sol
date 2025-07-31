@@ -25,10 +25,31 @@ contract PanagramTest is Test {
         panagram.newRound(ANSWER);
     }
 
+    function _getProof(bytes32 guess, bytes32 correctAnswer) internal returns (bytes memory _proof) {
+        uint256 NUM_ARGS = 5;
+        string[] memory inputs = new string[](NUM_ARGS);
+        inputs[0] = "npx";
+        inputs[1] = "tsx";
+        inputs[2] = "js-scripts/generateProof.ts";
+        inputs[3] = vm.toString(guess);
+        inputs[4] = vm.toString(correctAnswer);
+
+        bytes memory encodedProof = vm.ffi(inputs);
+        _proof = abi.decode(encodedProof, (bytes));
+        console.logBytes(_proof);
+    }
+
     // 1. Test someone receive NFT 0 if they guess correctly first
     function testCorrectGuessPasses() public {
         vm.prank(user);
-        panagram.makeGuess(proof)
+        bytes memory proof = _getProof(ANSWER, ANSWER);
+        panagram.makeGuess(proof);
+        vm.assertEq(panagram.balanceOf(user, 0), 1);
+        vm.assertEq(panagram.balanceOf(user, 1), 0);
+
+        vm.prank(user);
+        vm.expectRevert();
+        panagram.makeGuess(proof); // Should revert since already guessed correctly
     }
 
     // 2. Test someone receive NFT 1 if they guess correctly but not first
